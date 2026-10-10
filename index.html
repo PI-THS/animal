@@ -1849,8 +1849,8 @@ const ANIMALS={
   bear:    {n:'熊',  e:'BEAR',    c:'#d9b48a',h:2.05}};
 const AKEYS=Object.keys(ANIMALS);
 const NSTAGE=7,HP=3,QPR=5,NEED=4;
-// 難度：每場由第 1 級（最易）起，每答兩題升一級；第 1、2 關最高第 2 級，之後最高第 3 級
-const lvlOf=n=>Math.min(3,1+Math.floor(n/2));
+// 難度：第 1、2 關只出第 1 級；第 3、4 關只出第 2 級；第 5 至 7 關出第 3 級
+const lvlOfStage=i=>i<2?1:i<4?2:3;
 const LVN=['','一','二','三'];
 const SKEY='animalBattle.v1';
 let SAVE=null;
@@ -2184,7 +2184,7 @@ async function fightLoop(my){const i=F.stage,foeN=foeName(i),meN=ANIMALS[SAVE.an
     const cats=shuffle(['chi','eng','math','logic']).concat([pick(['chi','eng','math','logic'])]);
     const plan=F.retry.slice(0,QPR).map(q=>({retry:q})).concat(cats.slice(0,Math.max(0,QPR-F.retry.length)).map(c=>({cat:c})));F.retry=[];
     const used=new Set(),res=[];
-    for(let k=0;k<QPR;k++){updPower(res,k);const lv=Math.min(lvlOf(F.answered),F.stage<2?2:3);$('#roundTx').textContent=`第 ${F.round} 回合・第${LVN[lv]}級`;const r=await askOne(plan[k],lv,used);if(!alive(my))return;F.answered++;res.push(r.ok);if(!r.ok)F.retry.push(r.q);updPower(res,k+1);
+    for(let k=0;k<QPR;k++){updPower(res,k);const lv=lvlOfStage(F.stage);$('#roundTx').textContent=`第 ${F.round} 回合・第${LVN[lv]}級`;const r=await askOne(plan[k],lv,used);if(!alive(my))return;F.answered++;res.push(r.ok);if(!r.ok)F.retry.push(r.q);updPower(res,k+1);
       if(r.ok){AR.me.flash=0;}}
     const ok=res.filter(Boolean).length;await sleep(350);if(!alive(my))return;
     if(ok>=NEED){await banner(`答啱 ${ok} 題！<small>${meN}，衝呀！</small>`,1100);say(`答啱${ok}題！衝呀！`);await ram(AR.me,AR.foe);F.hpFoe--;updHearts('foe');}
