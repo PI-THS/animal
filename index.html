@@ -1838,7 +1838,7 @@ if(typeof globalThis!=='undefined')globalThis.__BANKS=BANKS;
 /* ======================= 動物比拼：設定 ======================= */
 // 玩法：揀一隻動物 → 地圖 7 關（每關隨機對手，第 7 關係大魔王）→ 1 對 1 擂台
 // 每回合 5 題：答啱 ≥4 題 → 自己隻動物撞對手（對手扣 1 心）；答啱 ≤3 題 → 對手撞自己（自己扣 1 心）
-// 雙方各 5 個心，對手冇心就過關
+// 雙方各 3 個心（贏 3 個回合就過關），對手冇心就過關
 const ANIMALS={
   hippo:   {n:'河馬',e:'HIPPO',   c:'#c9c0ee',h:1.85},
   lion:    {n:'獅子',e:'LION',    c:'#ffd27a',h:2.0},
@@ -1848,8 +1848,8 @@ const ANIMALS={
   wolf:    {n:'狼',  e:'WOLF',    c:'#c3cad6',h:2.0},
   bear:    {n:'熊',  e:'BEAR',    c:'#d9b48a',h:2.05}};
 const AKEYS=Object.keys(ANIMALS);
-const NSTAGE=7,HP=5,QPR=5,NEED=4;
-// 難度：每場由第 1 級（最易）起，每答兩題升一級，最高第 3 級
+const NSTAGE=7,HP=3,QPR=5,NEED=4;
+// 難度：每場由第 1 級（最易）起，每答兩題升一級；第 1、2 關最高第 2 級，之後最高第 3 級
 const lvlOf=n=>Math.min(3,1+Math.floor(n/2));
 const LVN=['','一','二','三'];
 const SKEY='animalBattle.v1';
@@ -2184,7 +2184,7 @@ async function fightLoop(my){const i=F.stage,foeN=foeName(i),meN=ANIMALS[SAVE.an
     const cats=shuffle(['chi','eng','math','logic']).concat([pick(['chi','eng','math','logic'])]);
     const plan=F.retry.slice(0,QPR).map(q=>({retry:q})).concat(cats.slice(0,Math.max(0,QPR-F.retry.length)).map(c=>({cat:c})));F.retry=[];
     const used=new Set(),res=[];
-    for(let k=0;k<QPR;k++){updPower(res,k);const lv=lvlOf(F.answered);$('#roundTx').textContent=`第 ${F.round} 回合・第${LVN[lv]}級`;const r=await askOne(plan[k],lv,used);if(!alive(my))return;F.answered++;res.push(r.ok);if(!r.ok)F.retry.push(r.q);updPower(res,k+1);
+    for(let k=0;k<QPR;k++){updPower(res,k);const lv=Math.min(lvlOf(F.answered),F.stage<2?2:3);$('#roundTx').textContent=`第 ${F.round} 回合・第${LVN[lv]}級`;const r=await askOne(plan[k],lv,used);if(!alive(my))return;F.answered++;res.push(r.ok);if(!r.ok)F.retry.push(r.q);updPower(res,k+1);
       if(r.ok){AR.me.flash=0;}}
     const ok=res.filter(Boolean).length;await sleep(350);if(!alive(my))return;
     if(ok>=NEED){await banner(`答啱 ${ok} 題！<small>${meN}，衝呀！</small>`,1100);say(`答啱${ok}題！衝呀！`);await ram(AR.me,AR.foe);F.hpFoe--;updHearts('foe');}
@@ -2195,7 +2195,7 @@ async function fightLoop(my){const i=F.stage,foeN=foeName(i),meN=ANIMALS[SAVE.an
   await tween(600,k=>{loser.ko=easeO(k);});loser.setDizzy(true);hitSfx();
   await banner('K.O.!',1300,'ko');if(!alive(my))return;
   roarSfx(winner.kind);tween(1200,k=>{winner.hop=Math.abs(Math.sin(k*Math.PI*3))*.7;});
-  if(win){fanfare();confetti(120);const stars=F.hpMe>=5?3:F.hpMe>=3?2:1;SAVE.stars[i]=Math.max(SAVE.stars[i]||0,stars);if(SAVE.stars.length<i+1)SAVE.stars.length=i+1;writeSave();
+  if(win){fanfare();confetti(120);const stars=F.hpMe>=3?3:F.hpMe>=2?2:1;SAVE.stars[i]=Math.max(SAVE.stars[i]||0,stars);if(SAVE.stars.length<i+1)SAVE.stars.length=i+1;writeSave();
     const last=i===NSTAGE-1;say(last?`好犀利呀！${meN}打贏咗大魔王，你係動物冠軍！`:`你贏咗！${meN}好叻呀！`);
     showResult({win:true,title:last?'動物冠軍！':'你贏咗！',text:last?`${meN}打贏咗大魔王！`:`${meN}打贏咗${foeN}！`,stars,
       btns:[[last?'返地圖':'下一關',last?'map':'play','grn',()=>last?goMap():goMapThen(i+1)],...(last?[]:[['返地圖','map','alt',goMap]])]});}
